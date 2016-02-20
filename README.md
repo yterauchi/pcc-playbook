@@ -166,3 +166,7 @@ pcc_user.yml
 * test.yml
     taskのみを宣言しているYAMLを、個別に実行するための暫定的なファイル。
 
+
+ライセンス
+GNU General Public License Version 2
+
