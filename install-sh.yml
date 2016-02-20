@@ -1,0 +1,28 @@
+---
+#- hosts: pcc
+#  sudo: no
+#  remote_user: root
+#  vars_files:
+#    - vars.yml
+#  tasks:
+    - name: copy config.sh
+      command: cp {{pcc_home}}/../tools/config.sh.sample {{pcc_home}}/../tools/config.sh
+    - name: transfer config.properties
+      copy: src=/root/ansible/files/config.properties
+            dest={{pcc_home}}/pcc/conf
+            mode=0644
+    - name: change pcc version
+      lineinfile: dest={{pcc_home}}/../tools/config.sh
+                  regexp="^PCC_VERSION"
+                  line="PCC_VERSION={{pcc_version}}"
+                  state=present
+    - name: execute install.sh
+      shell: sh ./install.sh
+             chdir={{pcc_home}}/../tools
+    - name: transfer pcc env
+      copy: src=/root/ansible/files/pcc.sh dest=/etc/profile.d mode=0755
+
+    - include: apache.yml
+    - include: zabbix.yml
+#    - include: pcc_user.yml
+    - include: tomcat.yml

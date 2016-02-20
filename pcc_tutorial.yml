@@ -1,0 +1,38 @@
+---
+- hosts: pcc
+  sudo: no
+  remote_user: root
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: transfer java
+      copy: src=/root/ansible/files/{{jdk}}
+            dest={{pcc_home}}/java/ mode=0755
+    - name: download python
+      get_url: url=http://legacy.python.org/ftp//python/2.7.2/Python-2.7.2.tgz
+               dest={{pcc_home}}/python
+               sha256sum=1d54b7096c17902c3f40ffce7e5b84e0072d0144024184fff184a84d563abbb3
+               force=yes
+    - name: download tomcat
+      get_url: url=http://archive.apache.org/dist/tomcat/tomcat-6/v6.0.37/bin/apache-tomcat-6.0.37.tar.gz
+               dest={{pcc_home}}/tomcat6
+               sha256sum=3e91abc752bf2b6ca19df9c8644bccdd92ba837397a8c1a745d72f58d5301b00
+               force=yes
+#    - name: transfer tomcat
+#      copy: src=/root/ansible/files/apache-tomcat-6.0.37.tar.gz
+#            dest={{pcc_home}}/tomcat6
+#            mode=0644
+
+    - name: install zabbix repogitory
+      yum: name=http://repo.zabbix.jp/relatedpkgs/rhel6/x86_64/zabbix-jp-release-6-6.noarch.rpm
+           state=present
+    - name: install puppet repogitory
+      yum: name=http://yum.puppetlabs.com/el/6/products/x86_64/puppetlabs-release-6-7.noarch.rpm
+           state=present
+
+    - include: openvpn_install.yml
+    - include: named_install.yml
+      vars:
+        named_dir: /var/named/chroot/etc
+ 
+    - include: install-sh.yml

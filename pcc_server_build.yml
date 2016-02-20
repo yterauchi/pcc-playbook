@@ -1,0 +1,16 @@
+---
+- hosts: pcc
+  sudo: no
+  remote_user: root
+  vars_files:
+    - vars.yml
+  tasks:
+    - include: os_setup.yml
+    - include: oracle_jdk_install.yml
+#    - include: openjdk_install.yml
+    - include: maven_install.yml
+      vars:
+        maven: apache-maven-3.2.5
+        pkg: "{{maven}}-bin.tar.gz"
+        maven_url: http://ftp.jaist.ac.jp/pub/apache/maven/maven-3/3.2.5/binaries/{{pkg}}
+    - include: pcc_source_get.yml

@@ -1,0 +1,5 @@
+---
+    - name: make git directory
+      file: path={{git_dir}} state=directory
+    - name: clone pcc source from github
+      git: repo={{github_url}} version={{checkout_version}} dest={{git_dir}}

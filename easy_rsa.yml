@@ -1,0 +1,88 @@
+---
+# - hosts: pcc
+#   sudo: no
+#   remote_user: root
+#   vars:
+#     easyrsa_dir: /etc/openvpn/easy-rsa
+#     easyrsa_varsfile: "{{easyrsa_dir}}/vars"
+#   tasks:
+    - name: transfer vars file for easy-rsa
+      copy: src=/root/ansible/files/vars dest={{easyrsa_varsfile}}  mode=0644
+    - name: transfer zip_wrpper.sh file
+      copy: src=/root/ansible/files/zip_wrapper.sh
+            dest={{easyrsa_dir}}
+            mode=0755
+
+    - name: clear key dirextory
+      shell: source ./vars && ./clean-all
+             chdir={{easyrsa_dir}}
+    - name: init ca
+      shell: source ./vars && env KEY_CN=server ./pkitool --batch --initca
+             chdir={{easyrsa_dir}}
+
+    - name: make server cert
+      shell: source ./vars && env KEY_CN=server ./pkitool --batch --server server
+             chdir={{easyrsa_dir}}
+    - name: make dh
+      shell: source ./vars && env KEY_CN=server $OPENSSL dhparam -out ${KEY_DIR}/dh${KEY_SIZE}.pem ${KEY_SIZE}
+             chdir={{easyrsa_dir}}
+    - name: copy ca.crt
+      command: cp -f keys/ca.crt /etc/openvpn/
+             chdir={{easyrsa_dir}}
+    - name: copy server.crt
+      command: cp -f keys/server.crt /etc/openvpn
+             chdir={{easyrsa_dir}}
+    - name: copy server.key
+      command: cp -f keys/server.key /etc/openvpn
+             chdir={{easyrsa_dir}}
+    - name: copy dh1024.pem
+      command: cp -f keys/dh1024.pem /etc/openvpn/
+             chdir={{easyrsa_dir}}
+    - name: make TLS key
+      command: openvpn --genkey --secret /etc/openvpn/ta.key
+
+    - name: make dummy key
+      shell: source ./vars && env KEY_CN=dummy ./pkitool dummy
+             chdir={{easyrsa_dir}}
+    - name: make dummy list
+      shell: source ./vars && env KEY_CN=dummy ./revoke-full dummy
+             chdir={{easyrsa_dir}}
+      ignore_errors: yes
+    - name: copy crl.pem
+      command: cp -f keys/crl.pem /etc/openvpn/
+             chdir={{easyrsa_dir}}
+
+    - name: make client key
+      shell: source ./vars && env KEY_CN=aws-vpnclient ./pkitool --batch aws-vpnclient
+             chdir={{easyrsa_dir}}
+    - name: remove password in client key file
+      command: openssl rsa -in aws-vpnclient.key -out aws-vpnclient.key.nopass
+             chdir={{easyrsa_dir}}/keys
+
+    - name: transfer client.conf for openvpn
+      copy: src=/root/ansible/files/client.conf
+            dest={{easyrsa_dir}}/keys
+            mode=0644
+    - name: make openvpn start shell
+      file: path={{easyrsa_dir}}/keys/openvpn-startup
+            state=touch
+            mode=0755
+    - name: make openvpn shutdown shell
+      file: path={{easyrsa_dir}}/keys/openvpn-shutdown
+            state=touch
+            mode=0755
+
+    - name: make client files directory
+      file: path={{easyrsa_dir}}/keys/client
+            state=directory
+    - name: copy client files
+      command: cp -f ca.crt aws-vpnclient.crt client.conf aws-vpnclient.key.nopass openvpn-startup openvpn-shutdown client
+             chdir={{easyrsa_dir}}/keys
+    - name: copy client files
+      command: cp -f /etc/openvpn/ta.key client
+             chdir={{easyrsa_dir}}/keys
+
+    - name: archive and encrypt client files
+      command: /etc/openvpn/easy-rsa/zip_wrapper.sh
+               chdir={{easyrsa_dir}}/keys/client
+

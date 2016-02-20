@@ -1,0 +1,70 @@
+---
+#- hosts: pcc
+#  sudo: no
+#  remote_user: root
+#  vars:
+#    pcc_version: 2.5.0
+#    work_dir: /root/work
+#    pcc_home: "{{work_dir}}/PrimeCloud-Controller-{{pcc_version}}/{{pcc_version}}"
+#    named_dir: /var/named/chroot/etc
+#  tasks:
+    - name: yum install named 
+      yum: name={{ item }} state=installed
+      with_items:
+        - bind
+        - bind-utils
+        - bind-chroot
+    - name: copy bind zone files
+      command: cp -f {{pcc_home}}/bind/{{ item }} {{named_dir}}/named
+      with_items:
+        - localhost.rev
+        - primecloud.jp.local.rev
+        - primecloud.jp.zone
+        - primecloud.jp.vpn.rev
+    - name: copy named.conf 
+      command: cp -f {{pcc_home}}/bind/named.conf {{named_dir}}
+    - name: get named.root
+      get_url: url=http://www.internic.net/domain/named.root
+               dest={{named_dir}}/named
+    - name: change init order
+
+#      command: sed -e "s/# chkconfig: - 13 87/# chkconfig: - 25 87/g" /etc/init.d/named
+      action: 'replace dest=/etc/init.d/named
+               regexp="^# chkconfig: - 13 87"
+               replace="# chkconfig: - 25 87"'
+    - name: start named service
+      service: name=named state=stopped
+      ignore_errors: yes
+    - name: disable named
+      service: name=named enabled=no
+    - name: enable named
+      service: name=named enabled=yes
+    - name: check chroot dir
+      lineinfile: dest=/etc/sysconfig/named
+                  line="ROOTDIR=/var/named/chroot"
+    - name: set zone file permission
+      file: path={{named_dir}}/named
+            recurse=yes
+            mode=0644
+            owner=named
+            group=named
+    - name: set named dir permission
+      file: path={{named_dir}}/named
+            mode=0744
+            owner=named
+            group=named
+    - name: set named.conf permission
+      file: path={{named_dir}}/named.conf
+            mode=0644
+            owner=named
+            group=named
+    - name: set resolv.conf
+      lineinfile: dest=/etc/resolv.conf
+                  line="nameserver 127.0.0.1"
+                  insertbefore="^nameserver"
+    - name: set ifcfg for dns
+      lineinfile: dest=/etc/sysconfig/network-scripts/ifcfg-eth0
+                  line="PEERDNS=no"
+
+    - name: start named service
+      service: name=named state=started

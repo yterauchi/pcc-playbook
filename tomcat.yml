@@ -1,0 +1,34 @@
+---
+#- hosts: pcc
+#  sudo: no
+#  remote_user: root
+#  vars:
+#    jdk: jdk-6u45-linux-x64-rpm.bin
+#    pcc_version: 2.5.0
+#    work_dir: /root/work
+#    pcc_home: "{{work_dir}}/PrimeCloud-Controller-{{pcc_version}}/{{pcc_version}}"
+#  tasks:
+    - name: make tomcat directory
+      file: path=/opt/data/default/tomcat
+            state=directory
+            owner=root
+            group=root
+    - name: copy tomcat
+      command: cp {{pcc_home}}/tomcat6/apache-tomcat-6.0.37.tar.gz /opt/data/default/tomcat/
+    - name: unarchive tomcat
+      command: tar zxvf apache-tomcat-6.0.37.tar.gz
+               chdir=/opt/data/default/tomcat
+    - name: make localhost directory
+      command: mkdir -p /opt/data/default/tomcat/apache-tomcat-6.0.37/conf/Catalina/localhost/
+    - name: unarchive commons-daemon-native
+      command: tar xvzf commons-daemon-native.tar.gz
+               chdir=/opt/data/default/tomcat/apache-tomcat-6.0.37/bin
+    - name: tomcat configure
+      command: ./configure
+               chdir=/opt/data/default/tomcat/apache-tomcat-6.0.37/bin/commons-daemon-1.0.15-native-src/unix
+    - name: tomcat make
+      command: make
+               chdir=/opt/data/default/tomcat/apache-tomcat-6.0.37/bin/commons-daemon-1.0.15-native-src/unix
+    - name: copy jsvc
+      command: cp jsvc /etc/puppet/modules/tomcat/files/
+               chdir=/opt/data/default/tomcat/apache-tomcat-6.0.37/bin/commons-daemon-1.0.15-native-src/unix

@@ -1,0 +1,26 @@
+---
+#- hosts: pcc
+#  sudo: no
+#  remote_user: root
+#  vars:
+#    maven: apache-maven-3.2.5
+#    pkg: "{{maven}}-bin.tar.gz"
+#    maven_url: http://ftp.jaist.ac.jp/pub/apache/maven/maven-3/3.2.5/binaries/{{pkg}}
+#  tasks:
+    - name: make maven directory
+      file: path=/usr/local/{{maven}} state=directory
+    - name: get maven
+      get_url: url={{maven_url}} dest=/tmp owner=root
+    - name: unarchive maven
+      command: tar zxvf /tmp/{{pkg}} -C /usr/local creates=/usr/local/apache-maven
+    - name: make symbolic link of maven
+      file: src=/usr/local/{{maven}} dest=/usr/local/apache-maven state=link
+    - name: make maven env file
+      file: path=/etc/profile.d/java.sh state=touch
+    - name: add M2_HOME
+      lineinfile: dest=/etc/profile.d/java.sh
+                  line="export M2_HOME=/usr/local/apache-maven"
+    - name: add PATH
+      lineinfile: dest=/etc/profile.d/java.sh
+                  line="export PATH=$PATH:/usr/local/apache-maven/bin"
+

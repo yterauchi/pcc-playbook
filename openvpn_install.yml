@@ -1,0 +1,46 @@
+---
+    - name: install epel repogitory
+      yum: name=http://ftp-srv2.kddilabs.jp/Linux/distributions/fedora/epel/6/x86_64/epel-release-6-8.noarch.rpm
+    - name: openvpn install
+      yum: name={{ item }} state=installed
+      with_items:
+        - lzo
+        - pam-devel
+        - lzo-devel
+        - openssl-devel
+        - openvpn
+    - name: download pam_mysql
+      get_url: url=https://raw.github.com/scsk-oss/library/master/rpm/x86_64/pam_mysql-0.7-0.12.rc1.el6.x86_64.rpm
+               dest={{pcc_home}}/openvpn
+    - name: install pam_mysql
+      yum: name={{pcc_home}}/openvpn/pam_mysql-0.7-0.12.rc1.el6.x86_64.rpm
+           state=present
+
+    - name: copy pam
+      command: cp {{pcc_home}}/openvpn/etc_pam.d_openvpn /etc/pam.d/openvpn
+    - name: copy server.conf
+      command: cp -f {{pcc_home}}/openvpn/server.conf /etc/openvpn/
+
+    - name: copy loaduserDB.sh
+      command: cp -f {{pcc_home}}/openvpn/loaduserDB.sh /etc/openvpn/
+    - name: chmod loaduserDB.sh
+      command: chmod +x /etc/openvpn/loaduserDB.sh
+    - name: add crontab loaduserDB.sh
+      cron: name="loaduserDB.sh script" minute="*/5" job="/etc/openvpn/loaduserDB.sh" state=present
+
+    - name: download easy-rsa
+      get_url: url=http://build.openvpn.net/downloads/releases/easy-rsa-2.2.0_master.tar.gz
+               dest="{{pcc_home}}/openvpn"
+    - name: unarchive easy-rsa
+      command: tar zxvf easy-rsa-2.2.0_master.tar.gz chdir="{{pcc_home}}/openvpn"
+    - name: copy easy-rsa
+      command: cp -r {{pcc_home}}/openvpn/easy-rsa-2.2.0_master/easy-rsa/2.0 /etc/openvpn/easy-rsa
+
+    - include: easy_rsa.yml
+      vars:
+        easyrsa_dir: /etc/openvpn/easy-rsa
+        easyrsa_varsfile: "{{easyrsa_dir}}/vars"
+
+    - name: openvpn service on 
+      service: name=openvpn state=started enabled=yes
+

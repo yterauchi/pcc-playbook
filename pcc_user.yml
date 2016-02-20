@@ -1,0 +1,46 @@
+---
+- hosts: pcc
+  sudo: no
+  remote_user: root
+  vars_files:
+    - vars.yml
+    - vars_user.yml
+  tasks:
+    - name: make info.log
+      file: path=/opt/adc/management-tool/logs/info.log
+            state=touch
+            owner=tomcat
+            group=tomcat
+            mode=0644
+    - name: add pcc user
+      command: sh pcc-add-user.sh -u {{pcc_user_id}} -p {{pcc_user_pw}}
+               chdir=/opt/adc/management-tool/bin
+      ignore_errors: yes
+    - name: add platform
+      command: pccadmin add platform --iaasName aws --platformName ec2_tokyo_vpc --platformNameDisp 'Amazon EC2 ec2_tokyo VPC' --platformSimpleDisp 'ec2_tokyo_vpc' --endpoint https://ap-northeast-1.amazonaws.com --internal 1 --region NORTHEAST --vpcid {{vpc_id}}
+      ignore_errors: yes
+    - name: enable platform
+      command: sh pcc-enable-user-aws.sh -u {{pcc_user_id}} -P ec2_tokyo -a {{aws_access_key_id}} -s {{aws_secret_access_key}}
+               chdir=/opt/adc/management-tool/bin/
+      ignore_errors: yes
+    - name: enable platform
+      command: sh pcc-enable-user-aws.sh -u {{pcc_user_id}} -P ec2_tokyo_vpc -a {{aws_access_key_id}} -s {{aws_secret_access_key}}
+               chdir=/opt/adc/management-tool/bin/
+      ignore_errors: yes
+    - name: add ELB image in IMAGE
+      command: mysql adc -e "INSERT INTO IMAGE (IMAGE_NO, PLATFORM_NO, IMAGE_NAME, IMAGE_NAME_DISP, OS, OS_DISP, SELECTABLE, COMPONENT_TYPE_NOS, ZABBIX_TEMPLATE) VALUES (102, 2, 'aws', 'Elastic Load Balancer', 'ELB', 'ELB', 0, '7', 'Template_OS_Linux')"
+      ignore_errors: yes
+    - name: add ELB image in IMAGE_AWS
+      command: mysql adc -e "INSERT INTO IMAGE_AWS (IMAGE_NO, IMAGE_ID, INSTANCE_TYPES, EBS_IMAGE) VALUES (102, 'ELB', '', 0)"
+      ignore_errors: yes
+    - name: add image of cenos6.5
+      command: pccrepo install --moduleName pcc-im_aws_CentOS6.5
+      ignore_errors: yes
+    - name: enable image for platform ec2_tokyo_vpc
+      command: pccadmin add image   --moduleName pcc-im_aws_CentOS6.5 --platformList ec2_tokyo_vpc
+      ignore_errors: yes
+    - name: restart machine
+      command: shutdown -r now "Ansible updates triggered"
+      async: 0
+      poll: 0
+      ignore_errors: yes

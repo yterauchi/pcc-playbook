@@ -1,0 +1,11 @@
+---
+  github_url: https://github.com/primecloud-controller-org/primecloud-controller.git
+  pcc_version: 2.5.2-SNAPSHOT
+  checkout_version: master
+#  github_url: https://github.com/yterauchi/primecloud-controller.git
+#  pcc_version: 2.5.2-SNAPSHOT
+#  checkout_version: elb
+  git_dir: /root/git/primecloud-controller
+  jdk: jdk-6u45-linux-x64-rpm.bin
+  work_dir: /root/work
+  pcc_home: "{{work_dir}}/PrimeCloud-Controller-{{pcc_version}}/{{pcc_version}}"

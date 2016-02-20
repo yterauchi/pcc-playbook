@@ -1,0 +1,33 @@
+---
+    - name: yum update
+      command: yum -y update
+    - name: yum install
+      yum: name={{ item }} state=installed
+      with_items:
+        - gcc
+        - make
+        - ld-linux.so.2
+        - yum-utils
+        - openssh-clients
+        - expect
+        - zip
+        - git
+        - ntp
+    - name: set hostname
+      lineinfile: dest=/etc/sysconfig/network
+            line="HOSTNAME=pcc.primecloud.jp"
+    - name: locale file copy
+      command: cp -pf /usr/share/zoneinfo/Japan /etc/localtime
+    - name: ntp service on
+      service: name=ntpd state=started enabled=yes
+    - name: iptables service off
+      service: name=iptables enabled=no
+    - name: restart machine
+      command: shutdown -r now "Ansible updates triggered"
+      async: 0
+      poll: 0
+      ignore_errors: true
+    - name: waiting for server to come back
+      local_action: wait_for host={{ inventory_hostname }}
+                    state=started
+      sudo: false

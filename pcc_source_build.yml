@@ -1,0 +1,23 @@
+---
+ - hosts: pcc
+   sudo: no
+   remote_user: root
+   vars_files:
+     - vars.yml
+   tasks:
+
+    - name: change http fom https for vaadin repo
+      lineinfile: dest={{git_dir}}/auto-project/auto-ui/pom.xml
+                  line="      <url>http://maven.vaadin.com/vaadin-addons</url>"
+                  regexp=".*maven.vaadin.com.*"
+    - name: maven clean
+      command: mvn clear chdir={{git_dir}}
+      ignore_errors: yes
+    - name: build pcc by maven
+      command: mvn install chdir={{git_dir}}
+    - name: make work directory
+      file: path={{work_dir}} state=directory
+    - name: copy pcc binary
+      command: cp {{git_dir}}/auto-tool/install-tool/target/PrimeCloud-Controller-{{pcc_version}}.tar.gz {{work_dir}}
+    - name: unarchive pcc binary
+      command: tar xvf {{work_dir}}/PrimeCloud-Controller-{{pcc_version}}.tar.gz chdir={{work_dir}}

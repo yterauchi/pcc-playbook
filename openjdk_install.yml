@@ -1,0 +1,13 @@
+---
+    - name: open-jdk install
+      yum: name={{ item }} state=installed
+      with_items:
+        - java-1.6.0-openjdk
+        - java-1.6.0-openjdk-devel
+    - name: download rpm
+      command: yumdownloader java-1.6.0-openjdk chdir=/root
+    - name: make env file
+      file: path=/etc/profile.d/java.sh state=touch
+    - name: add JAVA_HOME
+      lineinfile: dest=/etc/profile.d/java.sh
+                  line="export JAVA_HOME=/usr/lib/jvm/jre"

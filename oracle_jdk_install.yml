@@ -1,0 +1,26 @@
+---
+#- hosts: pcc
+#  sudo: no
+#  remote_user: root
+#- vars:
+#    jdk: jdk-6u45-linux-x64-rpm.bin
+#  tasks:
+    - name: transfer jdk from me
+      copy: src=/root/ansible/files/{{jdk}} dest=/tmp mode=0755
+    - name: install jdk
+      command: /tmp/{{jdk}} creates=/usr/java/default/bin/java
+    - name: alternate java
+      command: alternatives --install /usr/bin/java java /usr/java/default/bin/java 60045
+    - name: alternate set java
+      command: alternatives --set java /usr/java/default/bin/java
+    - name: make java env file
+      file: path=/etc/profile.d/java.sh state=touch
+    - name: add JAVA_HOME
+      lineinfile: dest=/etc/profile.d/java.sh
+                  line="export JAVA_HOME=/usr/java/default"
+    - name: add CLASSPATH
+      lineinfile: dest=/etc/profile.d/java.sh
+                  line="export CLASSPATH=.:$JAVA_HOME/lib"
+    - name: add PATH
+      lineinfile: dest=/etc/profile.d/java.sh
+                  line="export PATH=$JAVA_HOME/bin:$PATH"

@@ -1,0 +1,7 @@
+---
+vpc_id: vpc-xxxxxxxx
+aws_access_key_id: xxxxxxxxxxxxxxxxxxxx
+aws_secret_access_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+pcc_user_id: USERID
+pcc_user_pw: PASSWORD
